@@ -2,7 +2,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'
 import 'dotenv/config'
 import { initializeApp } from "firebase/app";
-import { collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, getFirestore, setDoc, deleteDoc } from 'firebase/firestore'
 
 // Conexion a la base de datos en Firebase 
 
@@ -101,6 +101,56 @@ app.post('/login', (req, res) => {
             })
          }
        })
+})
+
+app.get('/get-all', async (req, res) => {
+    const usuarios = collection(db, 'usuarios')
+    const docsUsuarios = await getDocs(usuarios)
+    const arrUsuarios = []
+    docsUsuarios.forEach((usuario) => {
+        const obj = {
+            nombre: usuario.data().nombre,
+            apaterno: usuario.data().apaterno,
+            amaterno: usuario.data().amaterno,
+            usuario: usuario.data().usuario,
+            telefono: usuario.data().telefono
+        }
+        arrUsuarios.push(obj)   
+    })
+    if (arrUsuarios.length > 0) {
+        res.json({
+            'alerta': 'success',
+            'data': arrUsuarios
+        })
+    } else {
+        res.json({
+            'alerta': 'error',
+            'message': 'No hay usuarios en la base d edatos'
+        })
+    }
+})
+
+app.post('/delete-user', (req, res) => {
+    const { usuario } = req.body
+    deleteDoc(doc(collection(db, 'usuarios'), usuario))
+    .then(data => {
+        console.log(data)
+        if (data) {
+          res.json({
+           'alerta': 'Usuario fue borrado'
+          })
+        } else {
+            res.json({
+                'alerta': "El usuario no existe en la base de datos"
+            })
+        }
+
+    }).catch(err => {
+        res.json({
+            'alerta': 'Fallo',
+            'message': err
+        })
+    })
 })
 
 const port = process.env.PORT || 6000
